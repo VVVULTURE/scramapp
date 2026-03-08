@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scramjet Loader | Protected</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a0000;
+            color: #ffdddd;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .control-bar {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #330000;
+            border-bottom: 2px solid #440000;
+            z-index: 20;
+        }
+
+        .status-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        .status-value {
+            font-size: 0.9em;
+            color: #ffaaaa;
+            font-weight: bold;
+        }
+
+        #loadButton {
+            padding: 10px 30px;
+            background-color: #880000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        #loadButton:hover {
+            background-color: #aa0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+        }
+
+        #iframeContainer {
+            flex-grow: 1;
+            position: relative;
+            background-color: #000;
+        }
+
+        #loadedIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .fullscreen-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px; /* Moved to right for better balance */
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 0.8em;
+            border: 1px solid #440000;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Watchdog indicator */
+        #watchdogFlash {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="control-bar">
+            <div class="status-group">
+                <span class="status-label">Watchdog Active</span>
+                <span class="status-value"><span id="watchdogFlash"></span>scramjet.mercurywork.shop</span>
+            </div>
+            <button id="loadButton">Launch App</button>
+        </div>
+        
+        <div id="iframeContainer">
+            <iframe id="loadedIframe" src="about:blank"></iframe>
+            <button class="fullscreen-overlay" id="fullscreenToggle">⛶ Fullscreen</button>
+        </div>
+    </div>
+
+    <script>
+        const loadButton = document.getElementById('loadButton');
+        const loadedIframe = document.getElementById('loadedIframe');
+        const iframeContainer = document.getElementById('iframeContainer');
+        const fullscreenToggle = document.getElementById('fullscreenToggle');
+        const watchdogFlash = document.getElementById('watchdogFlash');
+
+        const targetUrl = "https://scramjet.mercurywork.shop/";
+        const forbiddenUrl = "https://useast-www.securly.com/";
+
+        // 1. Manual Load Logic
+        loadButton.addEventListener('click', () => {
+            loadedIframe.src = targetUrl;
+            loadButton.textContent = "Reset View";
+        });
+
+        // 2. Watchdog Logic (Checks every 1 second)
+        setInterval(() => {
+            // Visual pulse to show the script is running
+            watchdogFlash.style.opacity = "1";
+            setTimeout(() => { watchdogFlash.style.opacity = "0"; }, 200);
+
+            try {
+                // Check current URL of the iframe
+                const currentIframeUrl = loadedIframe.contentWindow.location.href;
+                
+                if (currentIframeUrl.includes(forbiddenUrl)) {
+                    console.warn("Forbidden URL detected! Redirecting...");
+                    loadedIframe.src = targetUrl;
+                }
+            } catch (error) {
+                // If we hit a Same-Origin Policy error, we can't read the URL.
+                // In that case, we can only monitor the 'src' attribute 
+                // if it's being changed by other scripts on this page.
+                if (loadedIframe.src.includes(forbiddenUrl)) {
+                    loadedIframe.src = targetUrl;
+                }
+            }
+        }, 1000);
+
+        // 3. Fullscreen Logic
+        fullscreenToggle.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                iframeContainer.requestFullscreen?.() || 
+                iframeContainer.webkitRequestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            fullscreenToggle.textContent = document.fullscreenElement ? 'Exit Fullscreen' : '⛶ Fullscreen';
+        });
+    </script>
+</body>
+</html>
